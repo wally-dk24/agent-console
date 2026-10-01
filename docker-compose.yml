@@ -6,9 +6,9 @@
 # 2. docker compose up -d
 # 3. Open http://<host>:8080 and enroll (password + authenticator app).
 #
-# The app runs as UID 1000 inside the container and stores its auth state in
-# ./data/.auth.json — make sure ./data is writable by UID 1000
-# (chown -R 1000:1000 ./data on first setup).
+# Ownership: the container starts as root just long enough to chown the data
+# dir to PUID:PGID (below), then drops privileges — the app never runs as
+# root. Set PUID/PGID to match your data dir's owner; no manual chown needed.
 
 services:
   agent-console:
@@ -19,6 +19,8 @@ services:
       - "8080:8080"
     environment:
       PORT: "8080"
+      PUID: "1000"
+      PGID: "1000"
       # DATA_DIR: /data   # default; override only if you remount elsewhere
     volumes:
       - ./data:/data

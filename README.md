@@ -8,9 +8,9 @@ step, no dependencies, no secrets baked in.
 ## Run it
 
 ```bash
-# 1. Prepare a data directory the container can write (it stores .auth.json).
+# 1. Prepare a data directory (the entrypoint chowns it to PUID:PGID at
+#    startup, so a manual chown is optional).
 mkdir -p /srv/agent-console/data
-chown 1000:1000 /srv/agent-console/data        # image runs as USER 1000
 
 # 2. Feed it data (see "Feeding data" below) into /srv/agent-console/data/:
 #      files.json, contents.json, fleet.json, activity.json
@@ -19,14 +19,21 @@ chown 1000:1000 /srv/agent-console/data        # image runs as USER 1000
 podman run -d --name agent-console --net=host \
   -v /srv/agent-console/data:/data \
   -e PORT=8080 \
+  -e PUID=1000 -e PGID=1000 \
   docker.io/wallydk24/agent-console:latest
 
 # Docker instead of podman:
 docker run -d --name agent-console \
   -v /srv/agent-console/data:/data \
   -p 8080:8080 -e PORT=8080 \
+  -e PUID=1000 -e PGID=1000 \
   docker.io/wallydk24/agent-console:latest
 ```
+
+The container starts as root just long enough to recursively chown the data
+directory to `PUID:PGID` (defaults 1000:1000), then drops privileges before
+the app starts — the app itself never runs as root. Set `PUID`/`PGID` to match
+the owner of your data directory and skip the manual chown entirely.
 
 Then open `http://<host>:8080`.
 
