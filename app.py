@@ -417,7 +417,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json({"setup_key": _pending_enroll["secret"]})
 
         if route == "/api/enroll/verify":
-            if not _pending_enroll or time.time() - _pending_enroll["at"] > 600:
+            if not _pending_enroll or time.time() - _pending_enroll["at"] > 60:
                 _pending_enroll = None
                 return self._send_json({"error": "enrollment expired"}, 410)
             body = self._read_json_body()

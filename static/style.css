@@ -49,6 +49,15 @@ button.tab.active { color: var(--text); border-bottom: 2px solid var(--accent); 
   padding: 10px 12px;
 }
 .keybox code { flex: 1; word-break: break-all; font-size: 13px; }
+#enroll-qr { display: flex; justify-content: center; margin: 12px 0 4px; }
+#enroll-qr svg {
+  width: 200px; height: 200px; background: #fff;
+  padding: 10px; border-radius: 10px;
+}
+.countdown { font-weight: 600; white-space: nowrap; }
+.keyfallback { margin: 10px 0 4px; }
+.keyfallback summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+#enroll-restart { margin-top: 8px; }
 .codeboxes { display: flex; gap: 8px; margin-top: 6px; }
 .codeboxes input {
   width: 44px; height: 52px; text-align: center; font-size: 20px;

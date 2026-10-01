@@ -52,10 +52,50 @@ function codeValue(el) {
 }
 function onCodeChange(el) {
   if (el.dataset.target === "enroll")
-    $("enroll-finish").disabled = codeValue(el).length !== 6;
+    $("enroll-finish").disabled = !enrollAlive || codeValue(el).length !== 6;
 }
 
 /* ---------- enrollment ---------- */
+let enrollTimer = null;
+let enrollAlive = false;
+
+function enrollExpired() {
+  enrollAlive = false;
+  if (enrollTimer) { clearInterval(enrollTimer); enrollTimer = null; }
+  $("enroll-countdown").textContent = "Expired.";
+  $("enroll-error").textContent =
+    "This setup code expired. Start over to get a new one.";
+  $("enroll-finish").disabled = true;
+  $("enroll-restart").classList.remove("hidden");
+}
+
+function startEnrollCountdown() {
+  enrollAlive = true;
+  if (enrollTimer) clearInterval(enrollTimer);
+  const started = Date.now();
+  const tick = () => {
+    const left = 60 - Math.floor((Date.now() - started) / 1000);
+    if (left <= 0) { enrollExpired(); return; }
+    $("enroll-countdown").textContent =
+      "Expires in 0:" + String(left).padStart(2, "0") + ".";
+  };
+  tick();
+  enrollTimer = setInterval(tick, 1000);
+}
+
+function renderEnrollQr(secret) {
+  const uri = "otpauth://totp/" + encodeURIComponent("Agent Console") +
+    "?secret=" + encodeURIComponent(secret) +
+    "&issuer=" + encodeURIComponent("Agent Console");
+  try {
+    const qr = qrcode(0, "M");
+    qr.addData(uri);
+    qr.make();
+    $("enroll-qr").innerHTML = qr.createSvgTag(6, 4);
+  } catch (e) {
+    $("enroll-qr").innerHTML = "";
+  }
+}
 async function boot() {
   buildCodeBoxes($("enroll-code"));
   buildCodeBoxes($("login-code"));
@@ -71,7 +111,11 @@ $("setup-begin").addEventListener("click", async () => {
   const r = await post("/api/enroll", { password: pw });
   if (!r.ok) { $("setup-error").textContent = r.data.error || "Enrollment failed."; return; }
   $("enroll-key").textContent = r.data.setup_key;
+  $("enroll-error").textContent = "";
+  $("enroll-restart").classList.add("hidden");
+  renderEnrollQr(r.data.setup_key);
   show("view-enroll");
+  startEnrollCountdown();
 });
 
 $("enroll-copy").addEventListener("click", async () => {
@@ -89,8 +133,21 @@ $("enroll-finish").addEventListener("click", async () => {
   const code = codeValue($("enroll-code"));
   $("enroll-error").textContent = "";
   const r = await post("/api/enroll/verify", { code });
-  if (!r.ok) { $("enroll-error").textContent = r.data.error || "Verification failed."; return; }
+  if (!r.ok) {
+    if (r.status === 410) { enrollExpired(); return; }
+    $("enroll-error").textContent = r.data.error || "Verification failed."; return;
+  }
+  enrollAlive = false;
+  if (enrollTimer) { clearInterval(enrollTimer); enrollTimer = null; }
   enterApp();
+});
+
+$("enroll-restart").addEventListener("click", () => {
+  enrollAlive = false;
+  if (enrollTimer) { clearInterval(enrollTimer); enrollTimer = null; }
+  $("setup-password").value = "";
+  $("setup-error").textContent = "";
+  show("view-setup");
 });
 
 /* ---------- login ---------- */

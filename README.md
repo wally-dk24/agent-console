@@ -41,8 +41,9 @@ Then open `http://<host>:8080`.
 
 1. Open the console. You'll see **Private by default.** — choose a password
    (minimum 12 characters) and click **Begin secure setup**.
-2. **Secure this console.** shows an authenticator setup key (copy button —
-   shown once). Add it to your authenticator app via manual key entry.
+2. **Secure this console.** shows a QR code — scan it with your authenticator
+   app (or expand "Can't scan?" to enter the setup key manually). The code
+   expires 60 seconds after it appears; if it lapses, start over.
 3. Type the app's 6-digit code. **Finish setup** enables once the code is
    entered. You're in.
 
@@ -86,7 +87,8 @@ All JSON. Session cookie `ac_session` (HttpOnly, 24h).
 
 - `GET /api/auth-state` → `{"configured": true|false}`
 - `POST /api/enroll` `{"password"}` → `{"setup_key"}` (first run only)
-- `POST /api/enroll/verify` `{"code"}` → sets session
+- `POST /api/enroll/verify` `{"code"}` → sets session (410 if the 60s
+  enrollment window lapsed)
 - `POST /api/login` `{"password","code"}` → sets session
 - `POST /api/logout`
 - `GET /api/tree?path=` → breadcrumbs, dirs, files
