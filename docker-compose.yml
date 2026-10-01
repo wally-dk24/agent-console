@@ -1,0 +1,24 @@
+# Agent Console — self-hosted ops console for Muse users.
+# Image: docker.io/wallydk24/agent-console:latest (amd64, arm64, 386)
+#
+# 1. Put your data files in ./data (files.json, contents.json, fleet.json,
+#    activity.json). Generate them with:  python3 export_data.py --data-dir ./data
+# 2. docker compose up -d
+# 3. Open http://<host>:8080 and enroll (password + authenticator app).
+#
+# The app runs as UID 1000 inside the container and stores its auth state in
+# ./data/.auth.json — make sure ./data is writable by UID 1000
+# (chown -R 1000:1000 ./data on first setup).
+
+services:
+  agent-console:
+    image: docker.io/wallydk24/agent-console:latest
+    container_name: agent-console
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      # DATA_DIR: /data   # default; override only if you remount elsewhere
+    volumes:
+      - ./data:/data
