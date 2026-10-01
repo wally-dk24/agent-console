@@ -424,9 +424,16 @@ class Handler(BaseHTTPRequestHandler):
             code = str(body.get("code", ""))
             if not totp_verify(_pending_enroll["secret"], code):
                 return self._send_json({"error": "wrong code"}, 401)
-            save_auth({"password": _pending_enroll["password"],
-                       "totp_secret": _pending_enroll["secret"],
-                       "verified": True, "created_at": int(time.time())})
+            try:
+                save_auth({"password": _pending_enroll["password"],
+                           "totp_secret": _pending_enroll["secret"],
+                           "verified": True, "created_at": int(time.time())})
+            except OSError:
+                return self._send_json(
+                    {"error": "cannot write to the data directory. "
+                              "Make it writable by UID 1000, e.g. "
+                              "chown -R 1000:1000 <your data dir>, "
+                              "then try again."}, 500)
             _pending_enroll = None
             token = new_session()
             return self._send_json({"ok": True}, set_cookie=token)
@@ -456,6 +463,16 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     os.makedirs(DATA_DIR, exist_ok=True)
+    probe = os.path.join(DATA_DIR, ".write-test")
+    try:
+        with open(probe, "w") as f:
+            f.write("ok")
+        os.remove(probe)
+    except OSError:
+        print(f"WARNING: data directory {DATA_DIR} is not writable by "
+              f"UID {os.getuid()}. Enrollment and login will fail. "
+              f"On the host, run: chown -R 1000:1000 <your data dir>",
+              flush=True)
     server = ThreadingHTTPServer((HOST, PORT), Handler)
     print(f"agent-console listening on {HOST}:{PORT} (data: {DATA_DIR})",
           flush=True)
