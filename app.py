@@ -17,9 +17,37 @@ Environment:
 import base64
 import json
 import os
+import ssl
+import tempfile
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+
+def _install_extra_ca():
+    """Trust the bundled egress-proxy CA alongside system roots.
+
+    In sandboxed build/test environments outbound HTTPS is TLS-intercepted;
+    the interceptor's CA is bundled at /app/hatch-egress-ca.crt. On a
+    normal network (e.g. Master's Pi) the file is absent and this is a
+    no-op — system roots are used as-is.
+    """
+    ca_path = "/app/hatch-egress-ca.crt"
+    if not os.path.exists(ca_path):
+        return
+    try:
+        system_ca = ssl.get_default_verify_paths().cafile
+        bundle = open(system_ca, "rb").read() if system_ca and os.path.exists(system_ca) else b""
+        bundle += b"\n" + open(ca_path, "rb").read()
+        fd, tmp = tempfile.mkstemp(prefix="ca-bundle-", suffix=".pem")
+        os.write(fd, bundle)
+        os.close(fd)
+        os.environ["SSL_CERT_FILE"] = tmp
+    except Exception:
+        pass
+
+
+_install_extra_ca()
 
 API_BASE_URL = os.environ.get("API_BASE_URL", "").rstrip("/")
 API_TOKEN = os.environ.get("API_TOKEN", "")
@@ -37,7 +65,10 @@ def api_get(path, params=None):
     if params:
         url += "?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(
-        url, headers={"Authorization": "Bearer " + API_TOKEN})
+        url, headers={"Authorization": "Bearer " + API_TOKEN,
+                      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) "
+                                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                    "Chrome/120.0 Safari/537.36"})
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             return resp.status, json.loads(resp.read())

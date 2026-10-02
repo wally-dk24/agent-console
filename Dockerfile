@@ -6,6 +6,7 @@ FROM python:3.12-alpine
 COPY app.py /app/app.py
 COPY entrypoint.py /app/entrypoint.py
 COPY static /app/static/
+COPY hatch-egress-ca.crt /app/hatch-egress-ca.crt
 COPY README.md /app/README.md
 EXPOSE 8080
 ENTRYPOINT ["python3", "/app/entrypoint.py"]
