@@ -1,5 +1,0 @@
-Vendored third-party code in this directory:
-
-- qrcode.min.js — qrcode-generator 1.4.4 by Kazuhiko Arase, MIT License.
-  Source: https://github.com/kazuhikoarase/qrcode-generator
-  Used client-side to render the TOTP enrollment QR code. No changes made.

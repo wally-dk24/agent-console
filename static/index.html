@@ -9,63 +9,8 @@
 <body>
 <div id="app">
 
-  <!-- first-run gate -->
-  <section id="view-setup" class="gate hidden">
-    <div class="card">
-      <div class="lock">🔒</div>
-      <h1>Private by default.</h1>
-      <p class="muted">Create the password that guards this console, then
-      enroll your authenticator.</p>
-      <label>Console password
-        <input id="setup-password" type="password" autocomplete="new-password"
-               placeholder="At least 12 characters">
-      </label>
-      <p id="setup-error" class="error"></p>
-      <button id="setup-begin" class="primary">Begin secure setup</button>
-    </div>
-  </section>
-
-  <!-- TOTP enrollment -->
-  <section id="view-enroll" class="gate hidden">
-    <div class="card">
-      <div class="lock">🔒</div>
-      <h1>Secure this console.</h1>
-      <p class="muted">Scan the code with your authenticator app, then confirm
-      the current code. <span id="enroll-countdown" class="countdown"></span></p>
-      <div id="enroll-qr" aria-label="Authenticator QR code"></div>
-      <details class="keyfallback">
-        <summary>Can't scan? Enter the key manually</summary>
-        <div class="keybox">
-          <code id="enroll-key"></code>
-          <button id="enroll-copy" title="Copy key">⧉</button>
-        </div>
-      </details>
-      <label>Authenticator code</label>
-      <div id="enroll-code" class="codeboxes" data-target="enroll"></div>
-      <p id="enroll-error" class="error"></p>
-      <button id="enroll-finish" class="primary" disabled>Finish setup</button>
-      <button id="enroll-restart" class="ghost hidden">Start over</button>
-      <p class="hint">The setup code expires 60 seconds after it appears.</p>
-    </div>
-  </section>
-
-  <!-- login -->
-  <section id="view-login" class="gate hidden">
-    <div class="card">
-      <div class="lock">🔒</div>
-      <h1>Welcome back.</h1>
-      <label>Console password
-        <input id="login-password" type="password" autocomplete="current-password">
-      </label>
-      <label>Authenticator code</label>
-      <div id="login-code" class="codeboxes" data-target="login"></div>
-      <p id="login-error" class="error"></p>
-      <button id="login-go" class="primary">Sign in</button>
-    </div>
-  </section>
-
   <!-- main app -->
-  <section id="view-app" class="hidden">
+  <section id="view-app">
     <header class="topbar">
       <span class="brand">🧭 Agent Console</span>
       <nav>
@@ -73,7 +18,6 @@
         <button data-tab="activity" class="tab">Activity</button>
         <button data-tab="fleet" class="tab">Fleet</button>
       </nav>
-      <button id="logout" class="ghost">Sign out</button>
     </header>
 
     <div id="tab-files" class="tabpane">
@@ -125,7 +69,6 @@
   </section>
 
 </div>
-<script src="/static/vendor/qrcode.min.js"></script>
 <script src="/static/app.js"></script>
 </body>
 </html>

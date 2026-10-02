@@ -13,19 +13,9 @@ body {
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .muted { color: var(--muted); }
 .small { font-size: 12px; }
-.error { color: var(--danger); min-height: 1.2em; font-size: 13px; }
-.hint { color: var(--muted); font-size: 12px; }
 
-/* gates */
-.gate { display: flex; justify-content: center; padding: 8vh 16px 32px; }
-.card {
-  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
-  padding: 32px; width: 100%; max-width: 420px;
-}
-.card h1 { margin: 12px 0 8px; font-size: 22px; }
-.lock { font-size: 28px; }
-label { display: block; margin: 14px 0 6px; font-size: 13px; color: var(--muted); }
-input[type=password], input[type=text], input[type=search] {
+/* inputs */
+input[type=search] {
   width: 100%; padding: 10px 12px; margin-top: 6px; font-size: 15px;
   background: var(--bg); color: var(--text);
   border: 1px solid var(--line); border-radius: 8px;
@@ -35,35 +25,9 @@ button {
   font-size: 14px; padding: 9px 14px; border-radius: 8px; cursor: pointer;
   background: var(--panel); color: var(--text); border: 1px solid var(--line);
 }
-button.primary {
-  width: 100%; margin-top: 16px; padding: 12px;
-  background: var(--accent); border: none; color: #10130e; font-weight: 600;
-}
-button.primary:disabled { opacity: .45; cursor: default; }
 button.ghost { background: transparent; }
 button.tab { background: transparent; border: none; color: var(--muted); }
 button.tab.active { color: var(--text); border-bottom: 2px solid var(--accent); border-radius: 0; }
-.keybox {
-  display: flex; align-items: center; gap: 8px; margin-top: 6px;
-  background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
-  padding: 10px 12px;
-}
-.keybox code { flex: 1; word-break: break-all; font-size: 13px; }
-#enroll-qr { display: flex; justify-content: center; margin: 12px 0 4px; }
-#enroll-qr svg {
-  width: 200px; height: 200px; background: #fff;
-  padding: 10px; border-radius: 10px;
-}
-.countdown { font-weight: 600; white-space: nowrap; }
-.keyfallback { margin: 10px 0 4px; }
-.keyfallback summary { cursor: pointer; color: var(--muted); font-size: 13px; }
-#enroll-restart { margin-top: 8px; }
-.codeboxes { display: flex; gap: 8px; margin-top: 6px; }
-.codeboxes input {
-  width: 44px; height: 52px; text-align: center; font-size: 20px;
-  background: var(--bg); color: var(--text);
-  border: 1px solid var(--line); border-radius: 8px;
-}
 
 /* app shell */
 .topbar {
@@ -142,5 +106,4 @@ button.tab.active { color: var(--text); border-bottom: 2px solid var(--accent); 
     position: fixed; inset: 0; z-index: 20; max-height: none; border-radius: 0;
   }
   .only-mobile { display: inline-block; }
-  .codeboxes input { width: 40px; height: 48px; }
 }

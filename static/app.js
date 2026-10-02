@@ -13,157 +13,6 @@ async function api(method, url, body) {
   return { ok: res.ok, status: res.status, data };
 }
 const get = (url) => api("GET", url);
-const post = (url, body) => api("POST", url, body);
-
-function show(id) {
-  for (const v of ["view-setup", "view-enroll", "view-login", "view-app"])
-    $(v).classList.toggle("hidden", v !== id);
-}
-
-/* ---------- 6-digit code boxes ---------- */
-function buildCodeBoxes(el) {
-  el.innerHTML = "";
-  const inputs = [];
-  for (let i = 0; i < 6; i++) {
-    const inp = document.createElement("input");
-    inp.inputMode = "numeric"; inp.maxLength = 1; inp.autocomplete = "one-time-code";
-    inp.addEventListener("input", () => {
-      inp.value = inp.value.replace(/\D/g, "").slice(0, 1);
-      if (inp.value && i < 5) inputs[i + 1].focus();
-      onCodeChange(el);
-    });
-    inp.addEventListener("keydown", (e) => {
-      if (e.key === "Backspace" && !inp.value && i > 0) inputs[i - 1].focus();
-    });
-    inp.addEventListener("paste", (e) => {
-      const t = (e.clipboardData.getData("text") || "").replace(/\D/g, "").slice(0, 6);
-      if (t) {
-        e.preventDefault();
-        t.split("").forEach((ch, j) => { if (inputs[j]) inputs[j].value = ch; });
-        inputs[Math.min(t.length, 5)].focus();
-        onCodeChange(el);
-      }
-    });
-    el.appendChild(inp); inputs.push(inp);
-  }
-}
-function codeValue(el) {
-  return [...el.querySelectorAll("input")].map((i) => i.value).join("");
-}
-function onCodeChange(el) {
-  if (el.dataset.target === "enroll")
-    $("enroll-finish").disabled = !enrollAlive || codeValue(el).length !== 6;
-}
-
-/* ---------- enrollment ---------- */
-let enrollTimer = null;
-let enrollAlive = false;
-
-function enrollExpired() {
-  enrollAlive = false;
-  if (enrollTimer) { clearInterval(enrollTimer); enrollTimer = null; }
-  $("enroll-countdown").textContent = "Expired.";
-  $("enroll-error").textContent =
-    "This setup code expired. Start over to get a new one.";
-  $("enroll-finish").disabled = true;
-  $("enroll-restart").classList.remove("hidden");
-}
-
-function startEnrollCountdown() {
-  enrollAlive = true;
-  if (enrollTimer) clearInterval(enrollTimer);
-  const started = Date.now();
-  const tick = () => {
-    const left = 60 - Math.floor((Date.now() - started) / 1000);
-    if (left <= 0) { enrollExpired(); return; }
-    $("enroll-countdown").textContent =
-      "Expires in 0:" + String(left).padStart(2, "0") + ".";
-  };
-  tick();
-  enrollTimer = setInterval(tick, 1000);
-}
-
-function renderEnrollQr(secret) {
-  const uri = "otpauth://totp/" + encodeURIComponent("Agent Console") +
-    "?secret=" + encodeURIComponent(secret) +
-    "&issuer=" + encodeURIComponent("Agent Console");
-  try {
-    const qr = qrcode(0, "M");
-    qr.addData(uri);
-    qr.make();
-    $("enroll-qr").innerHTML = qr.createSvgTag(6, 4);
-  } catch (e) {
-    $("enroll-qr").innerHTML = "";
-  }
-}
-async function boot() {
-  buildCodeBoxes($("enroll-code"));
-  buildCodeBoxes($("login-code"));
-  const r = await get("/api/auth-state");
-  if (!r.data.configured) show("view-setup");
-  else show("view-login");
-}
-
-$("setup-begin").addEventListener("click", async () => {
-  const pw = $("setup-password").value;
-  $("setup-error").textContent = "";
-  if (pw.length < 12) { $("setup-error").textContent = "Use at least 12 characters."; return; }
-  const r = await post("/api/enroll", { password: pw });
-  if (!r.ok) { $("setup-error").textContent = r.data.error || "Enrollment failed."; return; }
-  $("enroll-key").textContent = r.data.setup_key;
-  $("enroll-error").textContent = "";
-  $("enroll-restart").classList.add("hidden");
-  renderEnrollQr(r.data.setup_key);
-  show("view-enroll");
-  startEnrollCountdown();
-});
-
-$("enroll-copy").addEventListener("click", async () => {
-  const key = $("enroll-key").textContent;
-  try { await navigator.clipboard.writeText(key); }
-  catch (e) {
-    const ta = document.createElement("textarea");
-    ta.value = key; document.body.appendChild(ta); ta.select();
-    document.execCommand("copy"); ta.remove();
-  }
-  $("enroll-copy").textContent = "✓";
-});
-
-$("enroll-finish").addEventListener("click", async () => {
-  const code = codeValue($("enroll-code"));
-  $("enroll-error").textContent = "";
-  const r = await post("/api/enroll/verify", { code });
-  if (!r.ok) {
-    if (r.status === 410) { enrollExpired(); return; }
-    $("enroll-error").textContent = r.data.error || "Verification failed."; return;
-  }
-  enrollAlive = false;
-  if (enrollTimer) { clearInterval(enrollTimer); enrollTimer = null; }
-  enterApp();
-});
-
-$("enroll-restart").addEventListener("click", () => {
-  enrollAlive = false;
-  if (enrollTimer) { clearInterval(enrollTimer); enrollTimer = null; }
-  $("setup-password").value = "";
-  $("setup-error").textContent = "";
-  show("view-setup");
-});
-
-/* ---------- login ---------- */
-$("login-go").addEventListener("click", async () => {
-  const r = await post("/api/login", {
-    password: $("login-password").value,
-    code: codeValue($("login-code")),
-  });
-  if (!r.ok) { $("login-error").textContent = r.data.error || "Sign in failed."; return; }
-  $("login-password").value = "";
-  enterApp();
-});
-$("logout").addEventListener("click", async () => {
-  await post("/api/logout", {});
-  location.reload();
-});
 
 /* ---------- tabs ---------- */
 document.querySelectorAll("button.tab").forEach((b) => {
@@ -176,12 +25,6 @@ document.querySelectorAll("button.tab").forEach((b) => {
     if (b.dataset.tab === "fleet") loadFleet();
   });
 });
-
-async function enterApp() {
-  show("view-app");
-  await loadTree("");
-  renderRecents();
-}
 
 /* ---------- file tree ---------- */
 function fmtSize(n) {
@@ -243,8 +86,7 @@ $("search").addEventListener("input", () => {
   searchTimer = setTimeout(runSearch, 180);
 });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "/" && document.activeElement !== $("search")
-      && !$("view-app").classList.contains("hidden")) {
+  if (e.key === "/" && document.activeElement !== $("search")) {
     e.preventDefault(); $("search").focus();
   }
   if (e.key === "Escape") closePreview();
@@ -390,4 +232,6 @@ async function loadFleet() {
   }
 }
 
-boot();
+/* ---------- boot: no auth, straight into the app ---------- */
+loadTree("");
+renderRecents();

@@ -4,7 +4,8 @@
 # 1. Put your data files in ./data (files.json, contents.json, fleet.json,
 #    activity.json). Generate them with:  python3 export_data.py --data-dir ./data
 # 2. docker compose up -d
-# 3. Open http://<host>:8080 and enroll (password + authenticator app).
+# 3. Open http://<host>:8080 — no login, it opens straight into the console.
+#    (Trusted-LAN build: anyone who can reach the port can read the data.)
 #
 # Ownership: the container starts as root just long enough to chown the data
 # dir to PUID:PGID (below), then drops privileges — the app never runs as

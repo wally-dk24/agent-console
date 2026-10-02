@@ -1,9 +1,12 @@
 # Agent Console
 
-A self-hosted ops console for Muse users: a private web UI over your agent
-workspace with password + TOTP auth, a findable file explorer, an activity
-stream, and a fleet overview. One small stdlib-only Python process, no build
-step, no dependencies, no secrets baked in.
+A self-hosted ops console for Muse users: a web UI over your agent
+workspace with a findable file explorer, an activity stream, and a fleet
+overview. One small stdlib-only Python process, no build step, no
+dependencies, no secrets baked in.
+
+No authentication: this build is meant for a trusted LAN. Anyone who can
+reach the port can read the data. Do not expose it to the internet.
 
 ## Run it
 
@@ -35,19 +38,7 @@ directory to `PUID:PGID` (defaults 1000:1000), then drops privileges before
 the app starts — the app itself never runs as root. Set `PUID`/`PGID` to match
 the owner of your data directory and skip the manual chown entirely.
 
-Then open `http://<host>:8080`.
-
-## First-run enrollment
-
-1. Open the console. You'll see **Private by default.** — choose a password
-   (minimum 12 characters) and click **Begin secure setup**.
-2. **Secure this console.** shows a QR code — scan it with your authenticator
-   app (or expand "Can't scan?" to enter the setup key manually). The code
-   expires 60 seconds after it appears; if it lapses, start over.
-3. Type the app's 6-digit code. **Finish setup** enables once the code is
-   entered. You're in.
-
-Later visits ask for password + the current 6-digit code. Sessions last 24h.
+Then open `http://<host>:8080` — it opens straight into the console.
 
 ## Feeding data
 
@@ -83,28 +74,18 @@ Wally-specific.
 
 ## API
 
-All JSON. Session cookie `ac_session` (HttpOnly, 24h).
+All JSON, no auth.
 
-- `GET /api/auth-state` → `{"configured": true|false}`
-- `POST /api/enroll` `{"password"}` → `{"setup_key"}` (first run only)
-- `POST /api/enroll/verify` `{"code"}` → sets session (410 if the 60s
-  enrollment window lapsed)
-- `POST /api/login` `{"password","code"}` → sets session
-- `POST /api/logout`
 - `GET /api/tree?path=` → breadcrumbs, dirs, files
 - `GET /api/search?q=&type=` → ranked matches (types: code, docs, data, media)
 - `GET /api/file?path=` → metadata + preview content
 - `GET /api/fleet`, `GET /api/activity`
 
-## Security notes
+## Notes
 
-- Passwords are PBKDF2-HMAC-SHA256 (200k iterations); TOTP is RFC 6238
-  (SHA-1, 30s, 6 digits, ±1 step); sessions are `secrets` tokens.
-- Auth material lives only in `$DATA_DIR/.auth.json` (mode 600), created at
-  enrollment. Back it up — losing it means re-enrolling (data files are
-  unaffected).
-- Login is rate-limited (10 attempts/minute per IP).
-- Serve behind HTTPS / on a trusted network; the app itself is plain HTTP.
+- The app is read-only: it never writes to the data directory.
+- Serve on a trusted network only; the app itself is plain HTTP with no
+  login. Do not expose it to the internet.
 
 ## Build
 

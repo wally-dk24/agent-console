@@ -7,7 +7,7 @@ Env:
     DATA_DIR  data directory  (default /data)
 
 When the container is started as root (the default), the data directory is
-recursively chown'ed to PUID:PGID so the app can always write its auth state,
+recursively chown'ed to PUID:PGID so file ownership stays sane,
 then privileges are dropped before the app starts. The app itself never runs
 as root. If the container is started as a non-root user already, the
 entrypoint just runs the app as-is.
