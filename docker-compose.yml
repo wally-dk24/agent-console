@@ -1,15 +1,17 @@
-# Agent Console — self-hosted ops console for Muse users.
+# Agent Console — thin API client for the Pi.
 # Image: docker.io/wallydk24/agent-console:latest (amd64, arm64, 386)
 #
-# 1. Put your data files in ./data (files.json, contents.json, fleet.json,
-#    activity.json). Generate them with:  python3 export_data.py --data-dir ./data
-# 2. docker compose up -d
-# 3. Open http://<host>:8080 — no login, it opens straight into the console.
-#    (Trusted-LAN build: anyone who can reach the port can read the data.)
+# 1. Set API_BASE_URL to your Agent Console Data API
+#    (e.g. https://agent-console-api.<your-subdomain>.workers.dev)
+# 2. Set API_TOKEN to the bearer token for that API.
+# 3. docker compose up -d
+# 4. Open http://<host>:8080 — no login, it opens straight into the console.
+#    (Trusted-LAN build: anyone who can reach the port can use it, but all
+#    data comes from your authenticated API upstream.)
 #
-# Ownership: the container starts as root just long enough to chown the data
-# dir to PUID:PGID (below), then drops privileges — the app never runs as
-# root. Set PUID/PGID to match your data dir's owner; no manual chown needed.
+# The bearer token stays server-side: the browser talks to this container
+# on localhost, and the container attaches the token when calling upstream.
+# No data files, no volumes.
 
 services:
   agent-console:
@@ -22,6 +24,5 @@ services:
       PORT: "8080"
       PUID: "1000"
       PGID: "1000"
-      # DATA_DIR: /data   # default; override only if you remount elsewhere
-    volumes:
-      - ./data:/data
+      API_BASE_URL: "https://agent-console-api.<your-subdomain>.workers.dev"
+      API_TOKEN: "paste-your-bearer-token-here"

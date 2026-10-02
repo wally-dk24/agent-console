@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
-"""Entrypoint: start as root, fix /data ownership, drop to PUID/PGID, run app.
+"""Entrypoint: start as root, drop to PUID/PGID, run the app.
+
+The app is a thin API client — it holds no local data, so there is no
+data directory to fix up. The container still starts as root by default
+so privilege-dropping stays consistent, then the app never runs as root.
 
 Env:
-    PUID      target user id  (default 1000)
-    PGID      target group id (default 1000)
-    DATA_DIR  data directory  (default /data)
-
-When the container is started as root (the default), the data directory is
-recursively chown'ed to PUID:PGID so file ownership stays sane,
-then privileges are dropped before the app starts. The app itself never runs
-as root. If the container is started as a non-root user already, the
-entrypoint just runs the app as-is.
+    PUID  target user id  (default 1000)
+    PGID  target group id (default 1000)
 """
 
 import os
@@ -26,31 +23,11 @@ def _int_env(name: str, default: int) -> int:
         return default
 
 
-def _chown_tree(path: str, uid: int, gid: int) -> None:
-    """Recursively chown path to uid:gid; warn and continue on errors."""
-    try:
-        os.chown(path, uid, gid)
-    except OSError as e:
-        print(f"entrypoint: could not chown {path}: {e}", flush=True)
-        return
-    for root, dirs, files in os.walk(path):
-        for name in dirs + files:
-            p = os.path.join(root, name)
-            try:
-                if not os.path.islink(p):
-                    os.chown(p, uid, gid)
-            except OSError as e:
-                print(f"entrypoint: could not chown {p}: {e}", flush=True)
-
-
 def main() -> None:
     puid = _int_env("PUID", 1000)
     pgid = _int_env("PGID", 1000)
-    data_dir = os.environ.get("DATA_DIR", "/data")
 
     if os.getuid() == 0:
-        os.makedirs(data_dir, exist_ok=True)
-        _chown_tree(data_dir, puid, pgid)
         try:
             os.setgid(pgid)
             os.setuid(puid)
